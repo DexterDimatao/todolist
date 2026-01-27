@@ -89,6 +89,15 @@
       font-weight: 500;
       color: #4f46e5;
     }
+    .activity-item {
+      font-size: 0.85rem;
+      padding: 8px 0;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .activity-time {
+      color: #6b7280;
+      font-size: 0.75rem;
+    }
   </style>
 </head>
 
@@ -138,30 +147,101 @@
       <!-- Task list -->
       <ul id="todoList" class="list-group mb-2"></ul>
       <p class="empty-state d-none" id="emptyStateText">No tasks yet. Add your first task above.</p>
+
+      <!-- Activity Log -->
+      <div class="mt-4">
+        <h6 class="fw-semibold mb-2">📊 Recent Activity</h6>
+        <div id="activityLog" class="border p-3 bg-light" style="max-height: 150px; overflow-y: auto;">
+          <div class="activity-item text-muted">Welcome! Activity log starts here.</div>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- All JavaScript embedded here -->
   <script>
-    // Login functionality - Random users welcome!
+    // User data storage
+    const userData = {};
+
+    // Login functionality
     const loginSection = document.getElementById('loginSection');
     const todoSection = document.getElementById('todoSection');
     const loginButton = document.getElementById('loginButton');
     const logoutButton = document.getElementById('logoutButton');
     const usernameInput = document.getElementById('username');
     const userGreeting = document.getElementById('userGreeting');
+    const activityLog = document.getElementById('activityLog');
 
     let currentUser = '';
+
+    function loadUserData(username) {
+      if (!userData[username]) {
+        userData[username] = {
+          tasks: [],
+          activity: []
+        };
+      }
+      return userData[username];
+    }
+
+    function addActivity(username, message) {
+      const data = loadUserData(username);
+      const timestamp = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      const activity = {
+        message,
+        time: timestamp
+      };
+      data.activity.unshift(activity); // Add to beginning
+      if (data.activity.length > 10) {
+        data.activity = data.activity.slice(0, 10); // Keep only last 10
+      }
+      updateActivityLog();
+    }
+
+    function updateActivityLog() {
+      activityLog.innerHTML = '';
+      const data = loadUserData(currentUser);
+      if (data.activity.length === 0) {
+        activityLog.innerHTML = '<div class="activity-item text-muted">No activity yet.</div>';
+        return;
+      }
+      data.activity.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'activity-item';
+        div.innerHTML = `<div>${item.message}</div><div class="activity-time">${item.time}</div>`;
+        activityLog.appendChild(div);
+      });
+    }
+
+    function saveTasksLocally() {
+      localStorage.setItem('todoAppUsers', JSON.stringify(userData));
+    }
+
+    function loadTasksLocally() {
+      const saved = localStorage.getItem('todoAppUsers');
+      if (saved) {
+        Object.assign(userData, JSON.parse(saved));
+      }
+    }
+
+    // Load saved data on page load
+    loadTasksLocally();
 
     loginButton.addEventListener('click', () => {
       const username = usernameInput.value.trim();
       if (username) {
         currentUser = username;
         userGreeting.textContent = currentUser;
+        
+        const userDataObj = loadUserData(currentUser);
+        addActivity(currentUser, `👋 ${currentUser} logged in`);
+        saveTasksLocally();
+        
         loginSection.style.display = 'none';
         todoSection.style.display = 'block';
         usernameInput.value = '';
-        usernameInput.focus(); // Focus on todo input after login
+        input.focus();
+        updateActivityLog();
       }
     });
 
@@ -172,14 +252,16 @@
     });
 
     logoutButton.addEventListener('click', () => {
+      addActivity(currentUser, `👋 ${currentUser} logged out`);
+      saveTasksLocally();
       currentUser = '';
       loginSection.style.display = 'block';
       todoSection.style.display = 'none';
-      document.getElementById('todoList').innerHTML = ''; // Clear tasks
+      list.innerHTML = '';
       updateTaskCount();
     });
 
-    // To-Do List functionality (original code)
+    // To-Do List functionality
     const input = document.getElementById('todoInput');
     const addButton = document.getElementById('addButton');
     const list = document.getElementById('todoList');
@@ -191,6 +273,7 @@
     const filterCompleted = document.getElementById('filterCompleted');
 
     let currentFilter = 'all';
+    let taskIdCounter = 0;
 
     function updateTaskCount() {
       const total = list.querySelectorAll('li').length;
@@ -221,80 +304,110 @@
       applyFilter();
     }
 
-    function addTask(text) {
-      if (!text.trim()) return;
+    function loadUserTasks() {
+      list.innerHTML = '';
+      const data = loadUserData(currentUser);
+      data.tasks.forEach(taskData => {
+        const li = document.createElement('li');
+        li.className = `list-group-item ${taskData.completed ? 'task-completed' : ''}`;
+        li.dataset.taskId = taskData.id;
 
-      const li = document.createElement('li');
-      li.className = 'list-group-item';
+        const left = document.createElement('div');
+        left.className = 'd-flex align-items-start gap-2';
 
-      const left = document.createElement('div');
-      left.className = 'd-flex align-items-start gap-2';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'form-check-input mt-1';
+        checkbox.checked = taskData.completed;
 
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.className = 'form-check-input mt-1';
+        const p = document.createElement('p');
+        p.className = `task-text mb-0 ${taskData.completed ? 'completed' : ''}`;
+        p.textContent = taskData.text;
 
-      const p = document.createElement('p');
-      p.className = 'task-text mb-0';
-      p.textContent = text.trim();
+        left.appendChild(checkbox);
+        left.appendChild(p);
 
-      left.appendChild(checkbox);
-      left.appendChild(p);
+        const btnGroup = document.createElement('div');
+        btnGroup.className = 'btn-group btn-group-sm';
+        btnGroup.role = 'group';
 
-      const btnGroup = document.createElement('div');
-      btnGroup.className = 'btn-group btn-group-sm';
-      btnGroup.role = 'group';
+        const editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'btn btn-outline-primary';
+        editBtn.textContent = 'Edit';
 
-      const editBtn = document.createElement('button');
-      editBtn.type = 'button';
-      editBtn.className = 'btn btn-outline-primary';
-      editBtn.textContent = 'Edit';
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'btn btn-outline-danger';
+        deleteBtn.textContent = 'Delete';
 
-      const deleteBtn = document.createElement('button');
-      deleteBtn.type = 'button';
-      deleteBtn.className = 'btn btn-outline-danger';
-      deleteBtn.textContent = 'Delete';
+        btnGroup.appendChild(editBtn);
+        btnGroup.appendChild(deleteBtn);
 
-      btnGroup.appendChild(editBtn);
-      btnGroup.appendChild(deleteBtn);
+        li.appendChild(left);
+        li.appendChild(btnGroup);
+        list.appendChild(li);
 
-      li.appendChild(left);
-      li.appendChild(btnGroup);
-      list.appendChild(li);
-
-      // Events
-      checkbox.addEventListener('change', () => {
-        li.classList.toggle('task-completed', checkbox.checked);
-        p.classList.toggle('completed', checkbox.checked);
-        applyFilter();
+        // Restore events
+        checkbox.addEventListener('change', () => toggleTaskComplete(li, taskData));
+        deleteBtn.addEventListener('click', () => deleteTask(li, taskData));
+        editBtn.addEventListener('click', () => editTask(li, taskData));
       });
-
-      deleteBtn.addEventListener('click', () => {
-        li.remove();
-        updateTaskCount();
-      });
-
-      editBtn.addEventListener('click', () => {
-        const newText = prompt('Edit task:', p.textContent);
-        if (newText !== null && newText.trim() !== '') {
-          p.textContent = newText.trim();
-        }
-      });
-
       updateTaskCount();
       applyFilter();
     }
 
-    addButton.addEventListener('click', () => {
-      addTask(input.value);
+    function addTask(text) {
+      if (!text.trim()) return;
+
+      const data = loadUserData(currentUser);
+      const taskData = {
+        id: ++taskIdCounter,
+        text: text.trim(),
+        completed: false,
+        createdAt: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+      };
+      data.tasks.push(taskData);
+      addActivity(currentUser, `➕ Added task: "${text.trim().substring(0, 30)}${text.trim().length > 30 ? '...' : ''}"`);
+      saveTasksLocally();
+      loadUserTasks();
       input.value = '';
       input.focus();
-    });
+    }
 
+    function toggleTaskComplete(li, taskData) {
+      const data = loadUserData(currentUser);
+      taskData.completed = !taskData.completed;
+      const action = taskData.completed ? '✅ Completed' : '🔄 Marked incomplete';
+      addActivity(currentUser, `${action}: "${taskData.text.substring(0, 30)}${taskData.text.length > 30 ? '...' : ''}"`);
+      saveTasksLocally();
+      loadUserTasks();
+    }
+
+    function deleteTask(li, taskData) {
+      const data = loadUserData(currentUser);
+      data.tasks = data.tasks.filter(task => task.id !== taskData.id);
+      addActivity(currentUser, `🗑️ Deleted task: "${taskData.text.substring(0, 30)}${taskData.text.length > 30 ? '...' : ''}"`);
+      saveTasksLocally();
+      loadUserTasks();
+    }
+
+    function editTask(li, taskData) {
+      const newText = prompt('Edit task:', taskData.text);
+      if (newText !== null && newText.trim() !== '' && newText.trim() !== taskData.text) {
+        const data = loadUserData(currentUser);
+        taskData.text = newText.trim();
+        addActivity(currentUser, `✏️ Edited task: "${newText.trim().substring(0, 30)}${newText.trim().length > 30 ? '...' : ''}"`);
+        saveTasksLocally();
+        loadUserTasks();
+      }
+    }
+
+    addButton.addEventListener('click', () => addTask(input.value));
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        addButton.click();
+        addTask(input.value);
       }
     });
 
