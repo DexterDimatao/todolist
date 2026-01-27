@@ -4,8 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>To-Do List</title>
+
   <!-- Bootstrap CSS CDN -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
   <style>
     body {
       background: #f4f6f9;
@@ -54,9 +56,8 @@
     .btn-add:hover {
       background-color: #4338ca;
     }
-    textarea {
-      resize: none;
-    }
+    textarea { resize: none; }
+
     .list-group-item {
       display: flex;
       justify-content: space-between;
@@ -86,13 +87,11 @@
       font-size: 0.9rem;
       margin-top: 10px;
     }
-    #todoSection, #allUsersView {
-      display: none;
-    }
-    #userGreeting {
-      font-weight: 500;
-      color: #4f46e5;
-    }
+
+    #todoSection, #allUsersView { display: none; }
+
+    #userGreeting { font-weight: 500; color: #4f46e5; }
+
     .activity-item {
       font-size: 0.85rem;
       padding: 8px 0;
@@ -102,6 +101,8 @@
       color: #6b7280;
       font-size: 0.75rem;
     }
+
+    /* You can keep these styles; script will reuse them for single-user “All Todos” */
     .all-users-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
@@ -129,7 +130,7 @@
       color: #64748b;
     }
     .user-tasks {
-      max-height: 200px;
+      max-height: 300px;
       overflow-y: auto;
     }
     .user-task {
@@ -155,10 +156,10 @@
   <!-- Login Section -->
   <div id="loginSection" class="auth-container">
     <h2>👤 Login</h2>
-    <p class="todo-subtitle">Enter any username to access your personal To-Do List.</p>
+    <p class="todo-subtitle">Enter your name to personalize your To-Do List.</p>
     <div class="mb-3">
-      <label for="username" class="form-label fw-semibold">Username</label>
-      <input type="text" class="form-control" id="username" placeholder="Enter any username (e.g. john123)" required>
+      <label for="username" class="form-label fw-semibold">Name</label>
+      <input type="text" class="form-control" id="username" placeholder="Enter your name" required>
     </div>
     <button class="btn btn-primary-custom w-100" id="loginButton">Login</button>
   </div>
@@ -175,12 +176,13 @@
         <button class="btn btn-outline-success" id="allTodosBtn">All Todos</button>
       </div>
     </div>
+
     <p class="todo-subtitle">Add tasks, then edit or delete them as you go.</p>
 
     <!-- Personal Task Input -->
     <div id="personalInputArea" class="mb-4">
       <label for="todoInput" class="form-label fw-semibold">New task</label>
-      <textarea class="form-control mb-2" id="todoInput" placeholder="Example: Finish UI mockups for portfolio..." rows="2"></textarea>
+      <textarea class="form-control mb-2" id="todoInput" placeholder="Example: Finish UI mockups..." rows="2"></textarea>
       <div class="d-flex justify-content-between align-items-center">
         <small class="text-muted">Press Enter or click "Add Task".</small>
         <button class="btn btn-add" id="addButton">Add Task</button>
@@ -210,327 +212,18 @@
     </div>
   </div>
 
-  <!-- All Users Todos View -->
+  <!-- All Todos View (SINGLE USER) -->
   <div id="allUsersView" class="todo-container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2>👥 All Users' To-Do Items</h2>
+      <h2>🗂️ <span id="allTasksName"></span>'s All Tasks</h2>
       <button class="btn btn-outline-secondary btn-sm" id="backToTasksBtn">← Back to My Tasks</button>
     </div>
-    <div id="allUsersContent" class="all-users-grid">
-      <!-- Dynamic content populated by JS -->
-    </div>
+
+    <!-- We keep this container but it now shows ONLY the current user's tasks -->
+    <div id="allUsersContent" class="all-users-grid"></div>
   </div>
 
-  <script>
-    // User data storage - FIXED global scope
-    window.userData = {};
-
-    // DOM elements - FIXED proper initialization
-    document.addEventListener('DOMContentLoaded', function() {
-      window.loginSection = document.getElementById('loginSection');
-      window.todoSection = document.getElementById('todoSection');
-      window.allUsersView = document.getElementById('allUsersView');
-      window.personalInputArea = document.getElementById('personalInputArea');
-      window.loginButton = document.getElementById('loginButton');
-      window.logoutButton = document.getElementById('logoutButton');
-      window.usernameInput = document.getElementById('username');
-      window.userGreeting = document.getElementById('userGreeting');
-      window.activityLog = document.getElementById('activityLog');
-      window.allUsersContent = document.getElementById('allUsersContent');
-      window.myTasksBtn = document.getElementById('myTasksBtn');
-      window.allTodosBtn = document.getElementById('allTodosBtn');
-      window.backToTasksBtn = document.getElementById('backToTasksBtn');
-      window.input = document.getElementById('todoInput');
-      window.addButton = document.getElementById('addButton');
-      window.list = document.getElementById('todoList');
-      window.taskCount = document.getElementById('taskCount');
-      window.emptyStateText = document.getElementById('emptyStateText');
-      window.filterAll = document.getElementById('filterAll');
-      window.filterActive = document.getElementById('filterActive');
-      window.filterCompleted = document.getElementById('filterCompleted');
-
-      initApp();
-    });
-
-    let currentUser = '';
-    let taskIdCounter = 0;
-    let currentFilter = 'all';
-    let currentView = 'personal';
-
-    function initApp() {
-      loadTasksLocally();
-      setupEventListeners();
-      updateTaskCount();
-      window.loginSection.style.display = 'block';
-    }
-
-    // Storage functions
-    function loadUserData(username) {
-      if (!window.userData[username]) {
-        window.userData[username] = { tasks: [], activity: [] };
-      }
-      return window.userData[username];
-    }
-
-    function saveTasksLocally() {
-      localStorage.setItem('todoAppUsers', JSON.stringify(window.userData));
-    }
-
-    function loadTasksLocally() {
-      const saved = localStorage.getItem('todoAppUsers');
-      if (saved) {
-        window.userData = JSON.parse(saved);
-      }
-    }
-
-    // Activity functions
-    function addActivity(username, message) {
-      const data = loadUserData(username);
-      const timestamp = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-      const activity = { message, time: timestamp };
-      data.activity.unshift(activity);
-      if (data.activity.length > 10) data.activity = data.activity.slice(0, 10);
-      if (currentUser === username && currentView === 'personal') updateActivityLog();
-    }
-
-    function updateActivityLog() {
-      window.activityLog.innerHTML = '';
-      const data = loadUserData(currentUser);
-      if (data.activity.length === 0) {
-        window.activityLog.innerHTML = '<div class="activity-item text-muted">No activity yet.</div>';
-        return;
-      }
-      data.activity.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'activity-item';
-        div.innerHTML = `<div>${item.message}</div><div class="activity-time">${item.time}</div>`;
-        window.activityLog.appendChild(div);
-      });
-    }
-
-    // All users view
-    function showAllUsersTodos() {
-      window.allUsersContent.innerHTML = '';
-      Object.entries(window.userData).forEach(([username, data]) => {
-        const total = data.tasks.length;
-        const completed = data.tasks.filter(t => t.completed).length;
-        
-        const userCard = document.createElement('div');
-        userCard.className = 'user-card';
-        userCard.innerHTML = `
-          <div class="user-header">
-            <h6>👤 ${username}</h6>
-            <div class="user-stats">
-              <span>Total: ${total}</span>
-              <span>Done: ${completed}</span>
-            </div>
-          </div>
-          <div class="user-tasks">
-            ${data.tasks.length ? data.tasks.map(task => `
-              <div class="user-task ${task.completed ? 'completed' : ''}">
-                <span>📝 ${task.text.length > 40 ? task.text.substring(0, 40) + '...' : task.text}</span>
-              </div>
-            `).join('') : '<div class="user-task"><span>No tasks</span></div>'}
-          </div>
-        `;
-        window.allUsersContent.appendChild(userCard);
-      });
-    }
-
-    // Task functions
-    function updateTaskCount() {
-      const total = window.list.querySelectorAll('li').length;
-      window.taskCount.textContent = total === 1 ? '1 task' : total + ' tasks';
-      window.emptyStateText.classList.toggle('d-none', total !== 0);
-    }
-
-    function applyFilter() {
-      const items = window.list.querySelectorAll('li');
-      items.forEach(li => {
-        const isCompleted = li.classList.contains('task-completed');
-        if (currentFilter === 'all') {
-          li.classList.remove('d-none');
-        } else if (currentFilter === 'active') {
-          li.classList.toggle('d-none', isCompleted);
-        } else if (currentFilter === 'completed') {
-          li.classList.toggle('d-none', !isCompleted);
-        }
-      });
-    }
-
-    function setFilter(filter) {
-      currentFilter = filter;
-      [window.filterAll, window.filterActive, window.filterCompleted].forEach(btn => btn.classList.remove('active'));
-      if (filter === 'all') window.filterAll.classList.add('active');
-      if (filter === 'active') window.filterActive.classList.add('active');
-      if (filter === 'completed') window.filterCompleted.classList.add('active');
-      applyFilter();
-    }
-
-    function loadUserTasks() {
-      window.list.innerHTML = '';
-      const data = loadUserData(currentUser);
-      data.tasks.forEach(taskData => {
-        const li = document.createElement('li');
-        li.className = `list-group-item ${taskData.completed ? 'task-completed' : ''}`;
-        li.dataset.taskId = taskData.id;
-
-        const left = document.createElement('div');
-        left.className = 'd-flex align-items-start gap-2';
-
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.className = 'form-check-input mt-1';
-        checkbox.checked = taskData.completed;
-
-        const p = document.createElement('p');
-        p.className = `task-text mb-0 ${taskData.completed ? 'completed' : ''}`;
-        p.textContent = taskData.text;
-
-        left.appendChild(checkbox);
-        left.appendChild(p);
-
-        const btnGroup = document.createElement('div');
-        btnGroup.className = 'btn-group btn-group-sm';
-        btnGroup.role = 'group';
-
-        const editBtn = document.createElement('button');
-        editBtn.type = 'button';
-        editBtn.className = 'btn btn-outline-primary';
-        editBtn.textContent = 'Edit';
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.type = 'button';
-        deleteBtn.className = 'btn btn-outline-danger';
-        deleteBtn.textContent = 'Delete';
-
-        btnGroup.appendChild(editBtn);
-        btnGroup.appendChild(deleteBtn);
-
-        li.appendChild(left);
-        li.appendChild(btnGroup);
-        window.list.appendChild(li);
-
-        checkbox.addEventListener('change', () => toggleTaskComplete(li, taskData));
-        deleteBtn.addEventListener('click', () => deleteTask(li, taskData));
-        editBtn.addEventListener('click', () => editTask(li, taskData));
-      });
-      updateTaskCount();
-      applyFilter();
-      updateActivityLog();
-    }
-
-    function addTask(text) {
-      if (!text.trim() || !currentUser) return;
-      const data = loadUserData(currentUser);
-      const taskData = {
-        id: Date.now() + Math.random(), // Unique ID
-        text: text.trim(),
-        completed: false,
-        createdAt: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-      };
-      data.tasks.push(taskData);
-      addActivity(currentUser, `➕ Added: "${text.trim().substring(0, 30)}${text.trim().length > 30 ? '...' : ''}"`);
-      saveTasksLocally();
-      loadUserTasks();
-      window.input.value = '';
-      window.input.focus();
-    }
-
-    function toggleTaskComplete(li, taskData) {
-      taskData.completed = !taskData.completed;
-      const action = taskData.completed ? '✅ Completed' : '🔄 Reopened';
-      addActivity(currentUser, `${action}: "${taskData.text.substring(0, 30)}${taskData.text.length > 30 ? '...' : ''}"`);
-      saveTasksLocally();
-      loadUserTasks();
-    }
-
-    function deleteTask(li, taskData) {
-      const data = loadUserData(currentUser);
-      data.tasks = data.tasks.filter(task => task.id !== taskData.id);
-      addActivity(currentUser, `🗑️ Deleted: "${taskData.text.substring(0, 30)}${taskData.text.length > 30 ? '...' : ''}"`);
-      saveTasksLocally();
-      loadUserTasks();
-    }
-
-    function editTask(li, taskData) {
-      const newText = prompt('Edit task:', taskData.text);
-      if (newText !== null && newText.trim() !== '' && newText.trim() !== taskData.text) {
-        taskData.text = newText.trim();
-        addActivity(currentUser, `✏️ Edited: "${newText.trim().substring(0, 30)}${newText.trim().length > 30 ? '...' : ''}"`);
-        saveTasksLocally();
-        loadUserTasks();
-      }
-    }
-
-    // Event listeners setup
-    function setupEventListeners() {
-      window.loginButton.addEventListener('click', handleLogin);
-      window.usernameInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleLogin());
-      window.logoutButton.addEventListener('click', handleLogout);
-      window.myTasksBtn.addEventListener('click', showMyTasks);
-      window.allTodosBtn.addEventListener('click', showAllTodos);
-      window.backToTasksBtn.addEventListener('click', showMyTasks);
-      window.addButton.addEventListener('click', () => addTask(window.input.value));
-      window.input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          addTask(window.input.value);
-        }
-      });
-      window.filterAll.addEventListener('click', () => setFilter('all'));
-      window.filterActive.addEventListener('click', () => setFilter('active'));
-      window.filterCompleted.addEventListener('click', () => setFilter('completed'));
-    }
-
-    function handleLogin() {
-      const username = window.usernameInput.value.trim();
-      if (!username) {
-        alert('Please enter a username');
-        return;
-      }
-      currentUser = username;
-      window.userGreeting.textContent = currentUser;
-      loadUserTasks();
-      addActivity(currentUser, `👋 ${currentUser} logged in`);
-      saveTasksLocally();
-      window.loginSection.style.display = 'none';
-      window.todoSection.style.display = 'block';
-      window.usernameInput.value = '';
-      window.input.focus();
-    }
-
-    function handleLogout() {
-      addActivity(currentUser, `👋 ${currentUser} logged out`);
-      saveTasksLocally();
-      currentUser = '';
-      currentView = 'personal';
-      window.loginSection.style.display = 'block';
-      window.todoSection.style.display = 'none';
-      window.allUsersView.style.display = 'none';
-      window.list.innerHTML = '';
-      updateTaskCount();
-    }
-
-    function showMyTasks() {
-      currentView = 'personal';
-      window.todoSection.style.display = 'block';
-      window.allUsersView.style.display = 'none';
-      window.personalInputArea.style.display = 'block';
-      loadUserTasks();
-      window.myTasksBtn.classList.add('active');
-      window.allTodosBtn.classList.remove('active');
-    }
-
-    function showAllTodos() {
-      currentView = 'all';
-      window.personalInputArea.style.display = 'none';
-      showAllUsersTodos();
-      window.todoSection.style.display = 'none';
-      window.allUsersView.style.display = 'block';
-      window.myTasksBtn.classList.remove('active');
-      window.allTodosBtn.classList.add('active');
-    }
-  </script>
+  <!-- Use external JS -->
+  <script src="script.js"></script>
 </body>
 </html>
