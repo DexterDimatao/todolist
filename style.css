@@ -1,63 +1,63 @@
 body {
-  background: #f4f6f9;
-  font-family: Arial, sans-serif;
-}
-.todo-container {
-  max-width: 600px;
-  margin: 60px auto;
-  background: white;
-  padding: 25px 30px;
-  border-radius: 12px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-h2 {
-  text-align: center;
-  margin-bottom: 5px;
-  font-weight: bold;
-}
-.todo-subtitle {
-  text-align: center;
-  font-size: 0.9rem;
-  color: #6b7280;
-  margin-bottom: 20px;
-}
-.btn-add {
-  background-color: #4f46e5;
-  color: white;
-  min-width: 110px;
-}
-.btn-add:hover {
-  background-color: #4338ca;
-}
-textarea {
-  resize: none;
-}
-.list-group-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-.task-text {
-  flex: 1;
-  margin: 0;
-  word-break: break-word;
-}
-.task-text.completed {
-  text-decoration: line-through;
-  color: #9ca3af;
-}
-.task-meta {
-  font-size: 0.8rem;
-  color: #6b7280;
-}
-.btn-group-sm .btn {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-}
-.empty-state {
-  text-align: center;
-  color: #9ca3af;
-  font-size: 0.9rem;
-  margin-top: 10px;
-}
+      background: #f4f6f9;
+      font-family: Arial, sans-serif;
+    }
+    .todo-container {
+      max-width: 600px;
+      margin: 60px auto;
+      background: white;
+      padding: 25px 30px;
+      border-radius: 12px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .todo-subtitle {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #6b7280;
+      margin-bottom: 20px;
+    }
+    .btn-add {
+      background-color: #4f46e5;
+      color: white;
+      min-width: 110px;
+    }
+    .btn-add:hover {
+      background-color: #4338ca;
+    }
+    textarea {
+      resize: none;
+    }
+    .list-group-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .task-text {
+      flex: 1;
+      margin: 0;
+      word-break: break-word;
+    }
+    .task-text.completed {
+      text-decoration: line-through;
+      color: #9ca3af;
+    }
+    .task-meta {
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+    .btn-group-sm .btn {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+    }
+    .empty-state {
+      text-align: center;
+      color: #9ca3af;
+      font-size: 0.9rem;
+      margin-top: 10px;
+    }
