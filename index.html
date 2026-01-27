@@ -11,13 +11,17 @@
       background: #f4f6f9;
       font-family: Arial, sans-serif;
     }
-    .todo-container {
-      max-width: 600px;
+    .auth-container, .todo-container {
+      max-width: 400px;
       margin: 60px auto;
       background: white;
-      padding: 25px 30px;
+      padding: 30px;
       border-radius: 12px;
       box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .todo-container {
+      max-width: 600px;
+      padding: 25px 30px;
     }
     h2 {
       text-align: center;
@@ -29,6 +33,14 @@
       font-size: 0.9rem;
       color: #6b7280;
       margin-bottom: 20px;
+    }
+    .btn-primary-custom {
+      background-color: #4f46e5;
+      border-color: #4f46e5;
+    }
+    .btn-primary-custom:hover {
+      background-color: #4338ca;
+      border-color: #4338ca;
     }
     .btn-add {
       background-color: #4f46e5;
@@ -70,41 +82,104 @@
       font-size: 0.9rem;
       margin-top: 10px;
     }
+    #todoSection {
+      display: none;
+    }
+    #userGreeting {
+      font-weight: 500;
+      color: #4f46e5;
+    }
   </style>
 </head>
 
 <body>
-  <div class="todo-container">
-    <h2>📝 To-Do List</h2>
-    <p class="todo-subtitle">Add tasks, then edit or delete them as you go.</p>
-
-    <!-- Input area -->
+  <!-- Login Section -->
+  <div id="loginSection" class="auth-container">
+    <h2>👤 Login</h2>
+    <p class="todo-subtitle">Enter any username to access your personal To-Do List.</p>
     <div class="mb-3">
-      <label for="todoInput" class="form-label fw-semibold">New task</label>
-      <textarea class="form-control mb-2" id="todoInput" placeholder="Example: Finish UI mockups for portfolio..." rows="2"></textarea>
-      <div class="d-flex justify-content-between align-items-center">
-        <small class="text-muted">Press Enter or click "Add Task".</small>
-        <button class="btn btn-add" id="addButton">Add Task</button>
-      </div>
+      <label for="username" class="form-label fw-semibold">Username</label>
+      <input type="text" class="form-control" id="username" placeholder="Enter any username (e.g. john123)">
     </div>
+    <button class="btn btn-primary-custom w-100" id="loginButton">Login</button>
+  </div>
 
-    <!-- Task filter / info -->
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <span class="task-meta" id="taskCount">0 tasks</span>
-      <div class="btn-group btn-group-sm" role="group" aria-label="Filter tasks">
-        <button type="button" class="btn btn-outline-secondary active" id="filterAll">All</button>
-        <button type="button" class="btn btn-outline-secondary" id="filterActive">Active</button>
-        <button type="button" class="btn btn-outline-secondary" id="filterCompleted">Completed</button>
+  <!-- To-Do List Section -->
+  <div id="todoSection">
+    <div class="todo-container">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h2>📝 <span id="userGreeting"></span>'s To-Do List</h2>
+        </div>
+        <button class="btn btn-outline-secondary btn-sm" id="logoutButton">Logout</button>
       </div>
-    </div>
+      <p class="todo-subtitle">Add tasks, then edit or delete them as you go.</p>
 
-    <!-- Task list -->
-    <ul id="todoList" class="list-group mb-2"></ul>
-    <p class="empty-state d-none" id="emptyStateText">No tasks yet. Add your first task above.</p>
+      <!-- Input area -->
+      <div class="mb-3">
+        <label for="todoInput" class="form-label fw-semibold">New task</label>
+        <textarea class="form-control mb-2" id="todoInput" placeholder="Example: Finish UI mockups for portfolio..." rows="2"></textarea>
+        <div class="d-flex justify-content-between align-items-center">
+          <small class="text-muted">Press Enter or click "Add Task".</small>
+          <button class="btn btn-add" id="addButton">Add Task</button>
+        </div>
+      </div>
+
+      <!-- Task filter / info -->
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="task-meta" id="taskCount">0 tasks</span>
+        <div class="btn-group btn-group-sm" role="group" aria-label="Filter tasks">
+          <button type="button" class="btn btn-outline-secondary active" id="filterAll">All</button>
+          <button type="button" class="btn btn-outline-secondary" id="filterActive">Active</button>
+          <button type="button" class="btn btn-outline-secondary" id="filterCompleted">Completed</button>
+        </div>
+      </div>
+
+      <!-- Task list -->
+      <ul id="todoList" class="list-group mb-2"></ul>
+      <p class="empty-state d-none" id="emptyStateText">No tasks yet. Add your first task above.</p>
+    </div>
   </div>
 
   <!-- All JavaScript embedded here -->
   <script>
+    // Login functionality - Random users welcome!
+    const loginSection = document.getElementById('loginSection');
+    const todoSection = document.getElementById('todoSection');
+    const loginButton = document.getElementById('loginButton');
+    const logoutButton = document.getElementById('logoutButton');
+    const usernameInput = document.getElementById('username');
+    const userGreeting = document.getElementById('userGreeting');
+
+    let currentUser = '';
+
+    loginButton.addEventListener('click', () => {
+      const username = usernameInput.value.trim();
+      if (username) {
+        currentUser = username;
+        userGreeting.textContent = currentUser;
+        loginSection.style.display = 'none';
+        todoSection.style.display = 'block';
+        usernameInput.value = '';
+        usernameInput.focus(); // Focus on todo input after login
+      }
+    });
+
+    usernameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        loginButton.click();
+      }
+    });
+
+    logoutButton.addEventListener('click', () => {
+      currentUser = '';
+      loginSection.style.display = 'block';
+      todoSection.style.display = 'none';
+      document.getElementById('todoList').innerHTML = ''; // Clear tasks
+      updateTaskCount();
+    });
+
+    // To-Do List functionality (original code)
     const input = document.getElementById('todoInput');
     const addButton = document.getElementById('addButton');
     const list = document.getElementById('todoList');
