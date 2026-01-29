@@ -1,12 +1,14 @@
 {
   "name": "todolist",
   "version": "1.0.0",
-  "private": true,
+  "description": "To-Do List app",
   "homepage": "https://github.com/DexterDimatao/todolist",
+  "private": true,
   "scripts": {
-    "deploy": "gh-pages -d ."
+    "deploy": "npx gh-pages -d .",
+    "predeploy": "echo 'Ready to deploy!'"
   },
   "devDependencies": {
-    "gh-pages": "^6.0.0"
+    "gh-pages": "^6.1.1"
   }
 }
